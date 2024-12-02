@@ -1,0 +1,135 @@
+buildscript {
+  repositories {
+    mavenCentral()
+    gradlePluginPortal()
+    google()
+  }
+}
+
+allprojects {
+  apply plugin: 'java'
+  apply plugin: 'eclipse'
+  apply plugin: 'idea'
+
+  // Java Compatibility
+  sourceCompatibility = 11
+  targetCompatibility = 11
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    // Add dependencies for all projects
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.11.0'
+    testImplementation 'org.mockito:mockito-core:5.0.0'
+  }
+
+  // IntelliJ IDEA Configuration
+  idea {
+    module {
+      outputDir file('build/classes/java/main')
+      testOutputDir file('build/classes/java/test')
+    }
+  }
+
+  // Set up source sets
+  sourceSets {
+    main {
+      java {
+        srcDirs = ['src/main/java']
+      }
+      resources {
+        srcDirs = ['src/main/resources']
+      }
+    }
+    test {
+      java {
+        srcDirs = ['test/AB_Final'] // Custom test directory
+      }
+      resources {
+        srcDirs = ['src/test/resources']
+      }
+    }
+  }
+
+  // Configure testing
+  tasks.withType(Test) {
+    useJUnitPlatform() // Enable JUnit 5
+    testLogging {
+      events "passed", "failed", "skipped"
+    }
+  }
+
+  // Incremental compilation
+  tasks.compileJava {
+    options.incremental = true
+  }
+
+  // Generate asset list for resources
+  tasks.register('generateAssetList') {
+    inputs.dir("${project.rootDir}/assets/")
+
+    File assetsFolder = new File("${project.rootDir}/assets/")
+    File assetsFile = new File(assetsFolder, "assets.txt")
+
+    if (assetsFolder.exists()) {
+      assetsFile.delete()
+      fileTree(assetsFolder).collect { assetsFolder.relativePath(it) }.sort().each {
+        assetsFile.append(it + "\n")
+      }
+    }
+  }
+
+  tasks.named('processResources') {
+    dependsOn 'generateAssetList'
+  }
+}
+
+subprojects {
+  version = '1.0.0'
+  ext.appName = 'AB_Final'
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    // Add subproject-specific dependencies here
+    implementation 'com.badlogicgames.gdx:gdx:1.11.0'
+    implementation 'com.badlogicgames.gdx:gdx-box2d:1.11.0'
+    implementation 'com.badlogicgames.gdx:gdx-freetype:1.11.0'
+    implementation 'com.badlogicgames.box2dlights:box2dlights:1.5'
+
+    // Headless backend for testing
+    implementation 'com.badlogicgames.gdx:gdx-backend-headless:1.11.0'
+  }
+
+  // Native library path setup for headless testing
+  tasks.withType(Test) {
+    systemProperty "java.library.path", "$projectDir/libs/natives"
+    testLogging.showStandardStreams = true
+  }
+
+  // Copy native libraries for testing
+  task copyNativeLibs(type: Copy) {
+    from configurations.runtimeClasspath
+    include 'com/badlogic/gdx/native/**'
+    into "$buildDir/libs/natives"
+  }
+
+  // Ensure native libraries are copied before tests run
+  tasks.named('test') {
+    dependsOn copyNativeLibs
+  }
+
+  // Clean up the build artifacts
+  clean {
+    delete "$buildDir/libs/natives"
+  }
+}
+
+// Project-specific name for Eclipse
+eclipse.project.name = 'AB_Final-parent'
+

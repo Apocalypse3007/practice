@@ -1,0 +1,38 @@
+apply plugin: 'java-library'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation 'com.badlogicgames.gdx:gdx:1.11.0'
+  implementation 'com.badlogicgames.gdx:gdx-box2d:1.11.0'
+  implementation 'com.badlogicgames.gdx:gdx-freetype:1.11.0'
+  implementation 'com.badlogicgames.box2dlights:box2dlights:1.5'
+  implementation "com.badlogicgames.gdx:gdx-platform:1.11.0:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-box2d-platform:1.11.0:natives-desktop"
+}
+
+// Configure source sets
+sourceSets {
+  main {
+    java {
+      srcDirs = ['src/main/java']
+    }
+    resources {
+      srcDirs = ['src/main/resources']
+    }
+  }
+  test {
+    java {
+      srcDirs = ['src/test/java']
+    }
+    resources {
+      srcDirs = ['src/test/resources']
+    }
+  }
+}
+
+tasks.withType(Test) {
+  useJUnitPlatform()
+}
